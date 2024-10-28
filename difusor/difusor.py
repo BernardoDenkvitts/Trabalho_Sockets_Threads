@@ -1,12 +1,15 @@
 import socket
 import json
+import threading
+import time
+
 
 # TODO thread que recebe dados dos produtores
 # TODO thread que vai enviar os dados pros consumidores
 # TODO colocar os atributos esperados pelo professor na classe Data
 
 class Informacao:
-    def __init__(self, seq: int, tipo: str, val: int):
+    def __init__(self, seq: int, tipo: int, val: int):
         self.seq = seq
         self.tipo = tipo
         self.val = val
@@ -43,7 +46,7 @@ def consume_data():
         tipo_literal = tipos_recebidos[data["tipo"]]
         print(f"Data received for type {tipo_literal}: {data}")
 
-        new_data = Informacao(seq=len(data_types[data["tipo"]]), tipo=tipo_literal, val=data["val"])
+        new_data = Informacao(seq=len(data_types[data["tipo"]]), tipo=data["tipo"], val=data["val"])
         data_types[data["tipo"]].append(new_data)
 
         print(f"Data stored for type {tipo_literal}: {new_data.__dict__}")
@@ -56,7 +59,10 @@ if __name__ == '__main__':
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind(("127.0.0.1", 81))
 
-    consume_data()
+    consumer_thread = threading.Thread(target=consume_data)
+    consumer_thread.start()
+
+    consumer_thread.join()
 
     for v in data_types[SPORTS]:
         print(v.__dict__)
