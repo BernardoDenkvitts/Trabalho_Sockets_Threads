@@ -23,23 +23,23 @@ TIPOS_MENSAGEM = {
 def start_threads():
     threads = []
     for tipo in TIPOS_MENSAGEM:
-        thread = threading.Thread(target=create_data, args=(tipo,))
+        print(f"Criando thread para o tipo {TIPOS_MENSAGEM[tipo]}")
+        thread = threading.Thread(target=create_data, args=(tipo, SLEEP_MIN, SLEEP_MAX,))
         thread.start()
         threads.append(thread)
 
     return threads
 
 
-def create_data(tipo: int):
-    # Envia 10 dados do tipo especificado para o difusor
-    for _ in range(11):
+def create_data(tipo: int, valor_min: int, valor_max: int):
+    for _ in range(10):
         data = {
             "tipo": tipo,
             "val": randint(V_MIN, V_MAX)
         }
         send_data(data)
         print(f"Data of type {TIPOS_MENSAGEM[tipo]} sent: {data}")
-        time.sleep(randint(SLEEP_MIN, SLEEP_MAX))
+        time.sleep(randint(valor_min, valor_max) / 1000)
 
 
 def send_data(data):
