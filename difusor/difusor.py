@@ -1,14 +1,9 @@
-import signal
 import socket
 import json
-import sys
 import threading
 import time
+from datetime import datetime
 
-
-# TODO thread que recebe dados dos produtores
-# TODO thread que vai enviar os dados pros consumidores
-# TODO colocar os atributos esperados pelo professor na classe Data
 
 class Informacao:
     def __init__(self, seq: int, tipo: int, val: int):
@@ -16,117 +11,135 @@ class Informacao:
         self.tipo = tipo
         self.val = val
 
-
-
-
-SPORTS = 1
-MOVIES = 2
-TRAVEL = 6
+# Vou deixar só os tipos que o produtor estiver enviando no final
+ESPORTES = 1
+NOVIDADES_DA_INTERNET = 2
+ELETRONICOS = 3
+POLITICA = 4
+NEGOCIOS = 5
+VIAGENS = 6
 
 tipos_recebidos = {
-    SPORTS: "SPORTS",
-    MOVIES: "MOVIES",
-    TRAVEL: "TRAVEL"
+    ESPORTES: "ESPORTES",
+    NOVIDADES_DA_INTERNET: "NOVIDADES_DA_INTERNET",
+    ELETRONICOS: "ELETRONICOS",
+    POLITICA: "POLITICA",
+    NEGOCIOS: "NEGOCIOS",
+    VIAGENS: "VIAGENS"
 }
 
-# Dicionário para armazenar os dados recebidos
-data_types = {
-    SPORTS: [],
-    MOVIES: [],
-    TRAVEL: []
+seq_informacoes = {
+    ESPORTES: 0,
+    NOVIDADES_DA_INTERNET: 0,
+    ELETRONICOS: 0,
+    POLITICA: 0,
+    NEGOCIOS: 0,
+    VIAGENS: 0
 }
 
-consumer_connections = {
-    SPORTS: [],
-    MOVIES: [],
-    TRAVEL: []
+conexao_consumidores = {
+    ESPORTES: [],
+    NOVIDADES_DA_INTERNET: [],
+    ELETRONICOS: [],
+    POLITICA: [],
+    NEGOCIOS: [],
+    VIAGENS: []
 }
 
-def consume_data():
+def consome_novas_informacoes():
     while True:
-        #if len(data_types[SPORTS]) == 10 and len(data_types[MOVIES]) == 10 and len(data_types[TRAVEL]) == 10:
-        #    break
-
         data, addr = sock.recvfrom(1024)
         data = json.loads(data.decode())
 
         tipo_literal = tipos_recebidos[data["tipo"]]
-        print(f"Data received for type {tipo_literal}: {data}")
+        print(f"Recebido informacao do tipo {data['tipo']}-{tipo_literal}: {data}")
 
-        new_data = Informacao(seq=len(data_types[data["tipo"]]), tipo=data["tipo"], val=data["val"])
-        data_types[data["tipo"]].append(new_data)
+        # Caso nao tenha consumidores para esse tipo, descarta a mensagem
+        if not len(conexao_consumidores[data["tipo"]]):
+            print(f"Sem consumidores para o tipo {data['tipo']}. Descartando mensagem.")
+            continue
 
-        print(f"Data stored for type {tipo_literal}: {new_data.__dict__}")
+        new_data = Informacao(seq=seq_informacoes[data["tipo"]], tipo=data["tipo"], val=data["val"])
+        seq_informacoes[data["tipo"]] += 1
+
+        notify_consumers(data["tipo"], new_data)
 
 
 # Função para notificar consumidores de um tipo específico quando novos dados são adicionados
-def notify_consumers(data_type, new_data):
-    for conn in consumer_connections[data_type]:
+def notify_consumers(tipo_informacao, new_data):
+    for conn in conexao_consumidores[tipo_informacao]:
         serialized_data = json.dumps(new_data.__dict__).encode()
         conn.sendall(serialized_data)
-        print(f"Sent data to consumer {conn.getpeername()}: {new_data.__dict__}")
+        print(f"({datetime.now().strftime('%H:%M:%S')}) Enviando informacao do tipo {tipo_informacao}-{tipos_recebidos[tipo_informacao]} para o consumidor {conn.getpeername()}: {new_data.__dict__}")
 
 
 
-# Função para atender um consumidor individualmente
-def handle_consumer(conn, data_type):
+# Atende um consumidor individualmente
+def handle_consumer(conn, tipo_informacao):
+    informacoes_consumidor = [tipo_informacao]
     try:
-        # Enviar dados existentes para o consumidor
-        for data in data_types[data_type]:
-            serialized_data = json.dumps(data.__dict__).encode()
-            conn.sendall(serialized_data)
-
-        # Adiciona o consumidor à lista de conexões interessadas
-        consumer_connections[data_type].append(conn)
-
+        # Adiciona o consumidor a lista de informacao que ele quer receber
+        conexao_consumidores[tipo_informacao].append(conn)
+        
         # Mantém a conexão ativa e monitora mensagens do cliente
         while True:
             message = conn.recv(1024).decode()
 
             if "Exit" in message:
-                print(f"Received 'Exit' from consumer {conn.getpeername()}. Closing connection.")
-                conn.sendall("Connection closed by server.".encode())
+                print(f"Recebido 'Exit' do consumidor {conn.getpeername()}. Finalizando conexao.")
+                conn.sendall("Conexao encerrada pelo servidor.".encode())
                 break
+            else:
+                try:
+                    nova_informacao = int(message)
+                    print(f"{conn.getpeername()} adicionado para receber informacoes do tipo {nova_informacao}")
+                    conexao_consumidores[nova_informacao].append(conn)
+                    informacoes_consumidor.append(nova_informacao)
+                except Exception as e:
+                    print(f"Consumidor {conn.getpeername()} solicitou uma informacao que nao existe")
+                    conn.sendall("Informacao nao existente".encode())
 
-            time.sleep(1)  # Mantém a conexão aberta e ajusta o intervalo conforme necessário
+            time.sleep(1)
     except Exception as e:
-        print(f"Connection to consumer {conn.getpeername()} closed. Reason: {e}")
+        print(f"Conexão com o consumidor {conn.getpeername()} fechada. Motivo: {e}")
     finally:
-        # Remover o consumidor ao final da conexão
-        consumer_connections[data_type].remove(conn)
+        # Remover o consumidor de todas as informacoes que ele se inscreveu ao final da conexão
+        for info in informacoes_consumidor:
+            conexao_consumidores[info].remove(conn)
+
         conn.close()
 
 
 # Função para aceitar novas conexões de consumidores
-def accept_connections():
+def aceita_conexoes():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
-        server_socket.bind(("127.0.0.1", 5000))
+        server_socket.bind(("127.0.0.1", 5555))
         server_socket.listen()
 
-        print("Awaiting consumer connections...")
+        print("Esperando conexoes..")
         while True:
             conn, addr = server_socket.accept()
-            print(f"Consumer connected: {addr}")
+            print(f"Consumidor conectado: {addr}")
 
-            data_type_request = int(conn.recv(1024).decode())
+            tipo_informacao = int(conn.recv(1024).decode())
 
             # Criar uma thread para gerenciar a conexão do consumidor
-            consumer_thread = threading.Thread(target=handle_consumer, args=(conn, data_type_request))
-            consumer_thread.start()
+            thread_consumidor = threading.Thread(target=handle_consumer, args=(conn, tipo_informacao))
+            thread_consumidor.start()
 
 
 if __name__ == '__main__':
     print("INICIANDO DIFUSOR")
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind(("127.0.0.1", 81))
+    sock.bind(("127.0.0.1", 5000))
 
-    consumer_thread = threading.Thread(target=consume_data)
-    consumer_thread.start()
+    thread_consumidor = threading.Thread(target=consome_novas_informacoes)
+    thread_consumidor.start()
 
-    accept_connections_thread = threading.Thread(target=accept_connections)
-    accept_connections_thread.start()
+    aceita_conexoes_thread = threading.Thread(target=aceita_conexoes)
+    aceita_conexoes_thread.start()
 
-    consumer_thread.join()
-    accept_connections_thread.join()
+    thread_consumidor.join()
+    aceita_conexoes_thread.join()
 
