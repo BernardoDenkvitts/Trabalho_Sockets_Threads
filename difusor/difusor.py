@@ -6,10 +6,10 @@ from datetime import datetime
 
 
 class Informacao:
-    def __init__(self, seq: int, tipo: int, val: int):
+    def __init__(self, seq: int, tipo: int, valor: int):
         self.seq = seq
         self.tipo = tipo
-        self.val = val
+        self.valor = valor
 
 # Vou deixar só os tipos que o produtor estiver enviando no final
 ESPORTES = 1
@@ -59,7 +59,7 @@ def consome_novas_informacoes():
             print(f"Sem consumidores para o tipo {data['tipo']}. Descartando mensagem.")
             continue
 
-        new_data = Informacao(seq=seq_informacoes[data["tipo"]], tipo=data["tipo"], val=data["val"])
+        new_data = Informacao(seq=seq_informacoes[data["tipo"]], tipo=data["tipo"], valor=data["valor"])
         seq_informacoes[data["tipo"]] += 1
 
         notify_consumers(data["tipo"], new_data)
