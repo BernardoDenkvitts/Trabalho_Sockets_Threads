@@ -32,11 +32,11 @@ Durante as tentativas, o consumidor "dormirá" dentro desse intervalo.
 
 ### Escuta
 
-- **INTERVALO_ESCUTA:** `5` segundos (indica que o consumidor está escutando, caso o publicador tenha suas threads inativas).
+- **INTERVALO_ESCUTA:** `5` segundos (indica que o consumidor está escutando, caso o publicador tenha suas threads inativas/"dormindo').
 
 ### Seleção de Informação
 
-Ao executar o consumidor, será solicitado o tipo de informação a ser recebida. As opções disponíveis são:
+Ao executar o consumidor, será solicitado o tipo de informação a ser recebida. A informação será capturada com base na entrada de um valor do tipo inteiro através do teclado. As opções disponíveis são:
 
 1. "Esporte"
 2. "Novidades da Internet"
