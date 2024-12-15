@@ -1,6 +1,6 @@
 # TDE - Sockets & Threads
 
-## 📖 Lecture - Ubiquitous Computing: Clouds, Iot e Smart Environments
+## 📖 Subject - Ubiquitous Computing: Clouds, Iot e Smart Environments
 
 ### 👨‍💻 Students
 Bernardo Arcari Denkvitts <193317@upf.br>  
