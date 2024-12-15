@@ -22,7 +22,7 @@ Develop a Pub/Sub simulator to send information to different consumers.
 Clone the project
 
 ```bash
-git clone https://github.com/BernardoDenkvitts/Trabalho_Sockets_Threads.git
+git clone https://github.com/BernardoDenkvitts/pub_sub_simulator.git
 ```
 
 To run the scripts, execute the following command:
