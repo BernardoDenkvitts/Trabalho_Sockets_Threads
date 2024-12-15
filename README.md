@@ -7,11 +7,11 @@ Bernardo Arcari Denkvitts <193317@upf.br>
 Pedro Marcelo Roso Manica <173722@upf.br>
 
 ## 🎯 Task goal
-Develop a Pub/Sub simulator to send informations to different consumers.
+Develop a Pub/Sub simulator to send information to different consumers.
 
 ![img.png](img.png)
 
-## 🚀 Techonologies
+## 🚀 Technologies
 * Python
 * Sockets (UDP, TCP)
 * Threads
@@ -22,12 +22,12 @@ Develop a Pub/Sub simulator to send informations to different consumers.
 Clone the project
 
 ```bash
-python -u nome_do_arquivo.py
+git clone https://github.com/BernardoDenkvitts/Trabalho_Sockets_Threads.git
 ```
 
-Tu run the scripts, execute the following command:
+To run the scripts, execute the following command:
 
-Obs - There is not specific order to run the files
+Obs - There is no specific order to run the files
 
 ```bash
 python -u file_name.py
